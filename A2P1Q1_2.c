@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<stdint.h>
+#include<math.h>
 
 #pragma pack(push, 1)  // 设定结构体按照1字节对齐
 typedef struct {
@@ -30,9 +31,8 @@ typedef struct{
 } RGB888;           //RGB888数据
 
 typedef struct{
-    uint8_t C1;
-    uint8_t C2;
-} RGB555;           //RGB555数据
+    uint8_t C;
+} RGB256;           //256色数据
 
 typedef struct{
     uint8_t B;
@@ -65,48 +65,54 @@ int main()
     fread(&bmpheader,sizeof(bmpheader),1,bmp);//读取源文件头
     BMPHeader new_header;//创建新文件头
     new_header = bmpheader;
-    new_header.size = 54 + + (long)256*256*4 + bmpheader.width*bmpheader.height*2;//设定文件大小
-    new_header.offset = 54 + (long)256*256*4;//设定新offset
-    new_header.bits_per_pixel = 16;
-    new_header.num_colors = (long)256*256;
+    new_header.size = 54 + 256*4 + (long)bmpheader.width*bmpheader.height;//设定文件大小
+    new_header.offset = 54 + 256*4;//设定新offset
+    new_header.bits_per_pixel = 8;
+    new_header.num_colors = 256;
     new_header.important_colors = 0;//设定颜色数
+    new_header.image_size = (long)bmpheader.width*bmpheader.height;
     fwrite(&new_header,sizeof(new_header),1,bmp_processed);
 
     //生成调色板
-    int clrb_num = 0;
-    long total_color = 256*256, count=1;
-    while(count<=total_color){
-        clrb new_clrb;
-        new_clrb.a = 0;
-        new_clrb.B = 255;
-        new_clrb.R = 0;
-        new_clrb.G = 255;
-        //计数和保存
-        fwrite(&new_clrb,sizeof(new_clrb),1,bmp_processed);
-        count++;
+    clrb new_clrb[256];
+    int clr_num = 0;
+    for(int i = 1;i<=6;i++){
+        for(int j = 1;j<=6;j++){
+            for(int k = 1;k<=7;k++){
+                new_clrb[clr_num].a = 0;
+                new_clrb[clr_num].B = (i-1)*51;
+                new_clrb[clr_num].G = (j-1)*51;
+                new_clrb[clr_num].R = (k-1)*42;
+                clr_num++;
+            }
+        }
     }
+    fwrite(&new_clrb,sizeof(clrb),256,bmp_processed);
 
     
     //读取RGB颜色
     double total_pixels = bmpheader.width*bmpheader.height;
-    count=1;
+    long count=1;
     while(count<=total_pixels){
         //读取RGB块
         RGB888 old_clr;
         fread(&old_clr,sizeof(RGB888),1,bmp);
-        //转换RGB颜色
-        RGB555 new_clr;
         uint8_t R,G,B;
-        //读取RGB（此处注意顺序）
         B = old_clr.R;
         G = old_clr.G;
         R = old_clr.B;
-        //转换为RGB555
-        uint16_t processed_clr;
-        processed_clr = ((R >> 3) << 10) | ((G >> 3) << 5) | (B >> 3);
+        //确定最接近的num
+        int close_num=0,close_sum=abs(new_clrb[0].B-B)+abs(new_clrb[0].G-G)+abs(new_clrb[0].R-R),temp_sum;
+        for(int i = 0;i<252;i++){
+            temp_sum = abs(new_clrb[i].B-B) + abs(new_clrb[i].G-G) + abs(new_clrb[i].R-R);
+            if(temp_sum < close_sum){
+                close_num = i;
+                close_sum = temp_sum;
+            }
+        }
         //存入数据
-        new_clr.C1 = processed_clr & 0xFF;
-        new_clr.C2 = (processed_clr>>8) & 0xFF;
+        RGB256 new_clr;
+        new_clr.C = close_num;
         //计数和保存
         count++;
         fwrite(&new_clr,sizeof(new_clr),1,bmp_processed);
