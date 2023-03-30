@@ -33,6 +33,13 @@ typedef struct{
     uint8_t C1;
     uint8_t C2;
 } RGB555;           //RGB555数据
+
+typedef struct{
+    uint8_t B;
+    uint8_t G;
+    uint8_t R;
+    uint8_t a;
+} clrb;             //调色板
 #pragma pack(pop) // 恢复原有对齐方式
 
 int main()
@@ -47,7 +54,7 @@ int main()
 
     //创建新文件
     FILE *bmp_processed;
-    bmp_processed = fopen("processed.bmp","wb");
+    bmp_processed = fopen("processed2.bmp","wb");
     if(bmp_processed == NULL){
         printf("creat file failed");
         exit(0);
@@ -58,15 +65,31 @@ int main()
     fread(&bmpheader,sizeof(bmpheader),1,bmp);//读取源文件头
     BMPHeader new_header;//创建新文件头
     new_header = bmpheader;
-    new_header.size = 54 + bmpheader.width*bmpheader.height*2;//设定文件大小
-    new_header.offset = 54;//设定新offset
+    new_header.size = 54 + + (long)256*256*4 + bmpheader.width*bmpheader.height*2;//设定文件大小
+    new_header.offset = 54 + (long)256*256*4;//设定新offset
     new_header.bits_per_pixel = 16;
-    new_header.num_colors = new_header.important_colors = 256;//设定颜色数
+    new_header.num_colors = (long)256*256;
+    new_header.important_colors = 0;//设定颜色数
     fwrite(&new_header,sizeof(new_header),1,bmp_processed);
+
+    //生成调色板
+    int clrb_num = 0;
+    long total_color = 256*256, count=1;
+    while(count<=total_color){
+        clrb new_clrb;
+        new_clrb.a = 0;
+        new_clrb.B = 255;
+        new_clrb.R = 0;
+        new_clrb.G = 255;
+        //计数和保存
+        fwrite(&new_clrb,sizeof(new_clrb),1,bmp_processed);
+        count++;
+    }
+
     
     //读取RGB颜色
     double total_pixels = bmpheader.width*bmpheader.height;
-    double count=1;
+    count=1;
     while(count<=total_pixels){
         //读取RGB块
         RGB888 old_clr;
