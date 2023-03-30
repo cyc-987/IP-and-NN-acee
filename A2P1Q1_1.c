@@ -22,10 +22,29 @@ typedef struct {
     uint32_t num_colors;     // 颜色索引表中颜色数
     uint32_t important_colors; // 重要颜色数，0表示都重要
 } BMPHeader;
+
+typedef struct{
+    uint8_t R;
+    uint8_t G;
+    uint8_t B;
+} RGB888;           //RGB888数据
+
+typedef struct{
+    uint8_t C1;
+    uint8_t C2;
+} RGB555;           //RGB555数据
+
+typedef struct{
+    uint8_t B;
+    uint8_t G;
+    uint8_t R;
+    uint8_t a;
+} clrb;             //调色板
 #pragma pack(pop) // 恢复原有对齐方式
 
 int main()
 {
+    //打开文件
     FILE *bmp;
     bmp = fopen("../A2P1/Q1/A2P1Q1_01.bmp", "rb");
     if(bmp == NULL){
@@ -33,17 +52,64 @@ int main()
         exit(0);
     }
 
-    /*FILE *bmp_processed;
+    //创建新文件
+    FILE *bmp_processed;
     bmp_processed = fopen("processed.bmp","wb");
     if(bmp_processed == NULL){
         printf("creat file failed");
         exit(0);
-    }*/
+    }
 
+    //初始化
     BMPHeader bmpheader;
-    fread(&bmpheader,sizeof(bmpheader),1,bmp);
-    printf("%u\n",bmpheader.size);
+    fread(&bmpheader,sizeof(bmpheader),1,bmp);//读取源文件头
+    BMPHeader new_header;//创建新文件头
+    new_header = bmpheader;
+    new_header.size = 54 + bmpheader.width*bmpheader.height*2;//设定文件大小
+    new_header.offset = 54;//设定新offset
+    new_header.bits_per_pixel = 16;
+    new_header.num_colors = new_header.important_colors = 256;//设定颜色数
+    fwrite(&new_header,sizeof(new_header),1,bmp_processed);
 
+    //生成调色板，初始化全部置零
+    clrb new_clrb[256];
+    int clrb_num = 0;
+    for(int i = 0;i<256;i++){
+
+        new_clrb[i].a = 0;
+        new_clrb[i].B = 0;
+        new_clrb[i].R = 0;
+        new_clrb[i].G = 0;
+    }
+
+    
+    //读取RGB颜色
+    double total_pixels = bmpheader.width*bmpheader.height;
+    double count=1;
+    while(count<=total_pixels){
+        //读取RGB块
+        RGB888 old_clr;
+        fread(&old_clr,sizeof(RGB888),1,bmp);
+        //转换RGB颜色
+        RGB555 new_clr;
+        uint8_t R,G,B;
+        //读取RGB（此处注意顺序）
+        B = old_clr.R;
+        G = old_clr.G;
+        R = old_clr.B;
+        //转换为RGB555
+        uint16_t processed_clr;
+        processed_clr = ((R >> 3) << 10) | ((G >> 3) << 5) | (B >> 3);
+        //存入数据
+        new_clr.C1 = processed_clr & 0xFF;
+        new_clr.C2 = (processed_clr>>8) & 0xFF;
+        //计数和保存
+        count++;
+        fwrite(&new_clr,sizeof(new_clr),1,bmp_processed);
+    }
+    
+
+    //写文件
     fclose(bmp);
-    //fclose(bmp_processed);
+    fclose(bmp_processed);
 }
