@@ -3,6 +3,7 @@
 #include<string.h>
 #include<stdint.h>
 #include<math.h>
+#include<time.h>
 
 #pragma pack(push, 1)  // 设定结构体按照1字节对齐
 typedef struct {
@@ -111,7 +112,9 @@ int main()
             Y = R*0.299+G*0.587+B*0.114;
             //转化为2色（简单示例，需要算法支持）
             uint8_t C;
-            if(Y<127) C = 0;
+            srand((unsigned)time(NULL)+(unsigned)rand());//重新播种随机数
+            int limit = rand()%256;
+            if(Y<limit) C = 0;
             else C = 1;
             //构造存储单元
             Byte = Byte << 1;
