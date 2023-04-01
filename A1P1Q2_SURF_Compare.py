@@ -32,6 +32,7 @@ print(distance/100)
 
 result = cv.drawMatches(img1,kp1,img2,kp2,matches[:100],None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 plt.imshow(result[:,:,::-1]),plt.show()
+cv.imwrite('surf.jpg',result)
 
 end2 = time.perf_counter()
 print(end1 - start)

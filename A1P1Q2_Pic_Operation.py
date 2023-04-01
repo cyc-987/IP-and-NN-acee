@@ -10,7 +10,7 @@ def blur(img,output_name_with_format,k_size):
     cv.imwrite(output_name_with_format,img)
 
 def change_size(img,output_name_with_format,relativesize):
-    cv.resize(img, dsize=None, fx=relativesize, fy=relativesize, interpolation=cv.INTER_LINEAR)
+    img = cv.resize(img, None, fx=relativesize, fy=relativesize, interpolation=cv.INTER_LINEAR)
     cv.imwrite(output_name_with_format,img)
 
 def rotate(img,output_name_with_format,angle,scale):
@@ -23,8 +23,8 @@ blur(img1,'dst_blurred.jpg',3)
 blur(img2,'src_blurred.jpg',3)
 change_size(img1,'dst_2x.jpg',2)
 change_size(img2,'src_2x.jpg',2)
-change_size(img1,'dst_0.5x.jpg',2)
-change_size(img2,'src_0.5x.jpg',2)
+change_size(img1,'dst_0.5x.jpg',0.5)
+change_size(img2,'src_0.5x.jpg',0.5)
 rotate(img2,'src_rotate_45_1x.jpg',45,1)
 rotate(img2,'src_rotate_45_2x.jpg',45,2)
 rotate(img2,'src_rotate_60_0.5x.jpg',60,0.5)
