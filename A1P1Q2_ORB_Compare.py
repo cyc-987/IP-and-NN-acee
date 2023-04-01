@@ -23,7 +23,15 @@ end1 = time.perf_counter()
 #特征点匹配
 bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
 matches = bf.match(des1,des2)
+print(len(matches))
 matches = sorted(matches, key = lambda x:x.distance)
+
+#计算匹配效果
+distance = 0
+for i in range(0,101):
+    distance += matches[i].distance
+print(distance/100)
+
 result = cv.drawMatches(img1,kp1,img2,kp2,matches[:100],None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 plt.imshow(result[:,:,::-1]),plt.show()
 
